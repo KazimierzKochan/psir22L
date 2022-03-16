@@ -1,3 +1,9 @@
+/*
+PSIR 2022L
+Monika Lewandowska, Kazimierz Kochan
+Warsaw Univeristy of Technology
+*/
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -12,72 +18,66 @@
 #define MAX_BUF 128
 
 int main(){
-	int s, new_s;
+	int s, new_s; //sockets
 	struct addrinfo h, *r;
 	unsigned char mip_str[INET_ADDRSTRLEN];
 	char message[MAX_BUF];
+
 	memset(&h, 0, sizeof(struct addrinfo));
 	h.ai_family=PF_INET;
 	h.ai_socktype=SOCK_STREAM;
 	h.ai_flags=AI_PASSIVE;
-	getaddrinfo(NULL, "3792", &h, &r );
 
-	printf("Witamy w programiku na lab1 z psiru\n");
+	getaddrinfo(NULL, "3792", &h, &r);
 
+	printf("PSIR 22L Lab1, exercise 1: Simple server\n");
+
+	//create socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-		exit(-1);
+		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);
+		exit(EXIT_FAILURE);
 	}
-
+	//bind
 	if(bind(s, r->ai_addr, r->ai_addrlen)!=0){
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-		exit(-1);
+		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
+		exit(EXIT_FAILURE);
+	}
+	//listen for the client
+	if(listen(s, 1)!=0){
+		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
+		exit(EXIT_FAILURE);
 	}
 
-	if(listen(s, 1)!=0){
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-		exit(-6);
-	}
 	struct sockaddr_in their_addr;
 	socklen_t addr_size=sizeof(their_addr);
+
+	//accept client
 	if((new_s=accept(s, (struct sockaddr *)&their_addr, &addr_size))==-1)
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
 	if(inet_ntop(AF_INET, &(their_addr.sin_addr), mip_str, INET_ADDRSTRLEN)!=NULL)
-		printf("IP: %s, new sock desc.: %d\n", mip_str, new_s);
+		printf("Client with IP: %s has connected. New sock desc.: %d\n", mip_str, new_s);
 
 	for(;;){
+		//receive data from client
 		int result=recv(new_s, message, MAX_BUF, 0);
 		if(result==0){
-			printf("Peer was disconeted\n");
+			printf("Client has disconneted\n");
 			break;
-			exit(-1);
+			exit(EXIT_FAILURE);
 		}else if(result<0){
-			printf("ERROR: %s\n", strerror(errno));
-			exit(-4);
+			fprintf(stderr, "ERROR: %s\n", strerror(errno));
+			exit(EXIT_FAILURE);
 		}
-		message[result]='\0';
-		printf("Client said: %s\n", message);
-
-		//obsluga innych sytuacji
-
+		//end message with null char, if it wasn't already ended
+		if(message[result-1] != '\0')
+			message[result]='\0';
+		printf("Client sent data: %s\n", message);
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
+	//clean up
 	close(s);
 	freeaddrinfo(r);
-
 
 	return 0;
 }
