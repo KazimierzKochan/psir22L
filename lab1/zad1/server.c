@@ -44,6 +44,7 @@ int main(){
 		exit(EXIT_FAILURE);
 	}
 	//listen for the client
+	printf("Listening for the client\n");
 	if(listen(s, 1)!=0){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
 		exit(EXIT_FAILURE);
@@ -72,7 +73,7 @@ int main(){
 		//end message with null char, if it wasn't already ended
 		if(message[result-1] != '\0')
 			message[result]='\0';
-		printf("Client sent data: %s\n", message);
+		printf("Client sent data: %s", message);
 	}
 
 	//clean up
