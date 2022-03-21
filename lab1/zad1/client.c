@@ -3,7 +3,6 @@ PSIR 2022L
 Monika Lewandowska, Kazimierz Kochan
 Warsaw Univeristy of Technology
 */
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -17,6 +16,8 @@ Warsaw Univeristy of Technology
 #include <time.h>
 
 #define MAX_LINE 1024
+#define SERVER "192.168.56.110"
+#define SERVER_PORT "3792"
 
 int main(){
 	//time
@@ -29,11 +30,11 @@ int main(){
 	struct addrinfo *r;
 
 	memset(&h, 0, sizeof(struct addrinfo));
-	getaddrinfo("192.168.56.110", "3792", &h, &r);
+	getaddrinfo(SERVER, SERVER_PORT, &h, &r);
 
-	printf("PSIR 22L Lab1, exercise 1: Simple client\n");
+	printf("PSIR 22L Lab1, exercise 1: Simple TCP client\n");
 
-	//create socket
+	//create a socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);
@@ -45,6 +46,7 @@ int main(){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
 		exit(EXIT_FAILURE);
 	}
+	//main loop
 	for(;;){
 		//create current time string
 		time(&rawtime);
@@ -59,7 +61,6 @@ int main(){
 		}
 		//sleep for 1030 ms
 		usleep(1030000);
-
 	}
 
 	//clean up

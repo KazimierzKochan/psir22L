@@ -3,7 +3,6 @@ PSIR 2022L
 Monika Lewandowska, Kazimierz Kochan
 Warsaw Univeristy of Technology
 */
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -16,7 +15,7 @@ Warsaw Univeristy of Technology
 #include <unistd.h>
 
 #define MAX_BUF 128
-#define PORT 19398
+#define SERVER_PORT "19398"
 
 int main(){
 	struct addrinfo h, *r, c;
@@ -30,11 +29,11 @@ int main(){
 	h.ai_socktype=SOCK_DGRAM;
 	h.ai_flags=AI_PASSIVE;
 
-	getaddrinfo(NULL, PORT, &h, &r);
+	getaddrinfo(NULL, SERVER_PORT, &h, &r);
 
-	printf("PSIR 22L Lab1, exercise 2: Simple server UDP\n");
+	printf("PSIR 22L Lab1, exercise 2: Simple UDP server\n");
 
-	//create socket
+	//create a socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);

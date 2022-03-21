@@ -3,7 +3,6 @@ PSIR 2022L
 Monika Lewandowska, Kazimierz Kochan
 Warsaw Univeristy of Technology
 */
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -16,6 +15,7 @@ Warsaw Univeristy of Technology
 #include <unistd.h>
 
 #define MAX_BUF 128
+#define SERVER_PORT "3792"
 
 int main(){
 	int s, new_s; //sockets
@@ -28,11 +28,11 @@ int main(){
 	h.ai_socktype=SOCK_STREAM;
 	h.ai_flags=AI_PASSIVE;
 
-	getaddrinfo(NULL, "3792", &h, &r);
+	getaddrinfo(NULL, SERVER_PORT, &h, &r);
 
-	printf("PSIR 22L Lab1, exercise 1: Simple server\n");
+	printf("PSIR 22L Lab1, exercise 1: Simple TCP server\n");
 
-	//create socket
+	//create a socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);
@@ -58,7 +58,7 @@ int main(){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-1);
 	if(inet_ntop(AF_INET, &(their_addr.sin_addr), mip_str, INET_ADDRSTRLEN)!=NULL)
 		printf("Client with IP: %s has connected. New sock desc.: %d\n", mip_str, new_s);
-
+	//main loop
 	for(;;){
 		//receive data from client
 		int result=recv(new_s, message, MAX_BUF, 0);
@@ -70,9 +70,8 @@ int main(){
 			fprintf(stderr, "ERROR: %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-		//end message with null char, if it wasn't already ended
-		if(message[result-1] != '\0')
-			message[result]='\0';
+		//end message with a null char
+		message[result]='\0';
 		printf("Client sent data: %s", message);
 	}
 

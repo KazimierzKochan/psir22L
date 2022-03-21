@@ -3,7 +3,6 @@ PSIR 2022L
 Monika Lewandowska, Kazimierz Kochan
 Warsaw Univeristy of Technology
 */
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -29,7 +28,7 @@ int main(){
 	struct addrinfo h, *r, c;
 	int c_len = sizeof(c);
 
-	printf("PSIR 2022L Lab1, exercise 2: UDP client\n");
+	printf("PSIR 2022L Lab1, exercise 2: Simple UDP client\n");
 
 	memset(&h, 0, sizeof(struct addrinfo));
 	h.ai_family = PF_INET;
@@ -40,14 +39,14 @@ int main(){
 		exit(EXIT_FAILURE);
 	}
 
-	//create socket
+	//create a socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
 		fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);
 		exit(EXIT_FAILURE);
 	}
 
-	//send hello message, flag=69 (HELLO)
+	//send hello message
 	snprintf(send_m, MAX_BUF, "hHELLO!");
 	printf("Sending HELLO message...\n");
 	pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
