@@ -16,9 +16,12 @@ Warsaw Univeristy of Technology
 #include <time.h>
 
 #define MAX_BUF 128
-#define SERVER_IP "192.168.56.110"
+#define SERVER "192.168.56.110"
 #define SERVER_PORT "19398"
+#define HELLO_MESSAGE 'h'
+#define NORMAL_MESSAGE 'm'
 
+//#define SERVER "localhost"
 int main(){
 	//time
 	unsigned char send_m[MAX_BUF];
@@ -27,6 +30,7 @@ int main(){
 	int pos;
 	struct addrinfo h, *r, c;
 	int c_len = sizeof(c);
+	char message_t;
 
 	printf("PSIR 2022L Lab1, exercise 2: Simple UDP client\n");
 
@@ -34,7 +38,7 @@ int main(){
 	h.ai_family = PF_INET;
 	h.ai_socktype = SOCK_DGRAM;
 
-	if(getaddrinfo(SERVER_IP, SERVER_PORT, &h, &r) != 0){
+	if(getaddrinfo(SERVER, SERVER_PORT, &h, &r) != 0){
 		fprintf(stderr, "ERROR: Couldn't  get server info (%s:%d)\n", __FILE__, __LINE__-1);
 		exit(EXIT_FAILURE);
 	}
@@ -47,7 +51,8 @@ int main(){
 	}
 
 	//send hello message
-	snprintf(send_m, MAX_BUF, "hHELLO!");
+	message_t = HELLO_MESSAGE;
+	snprintf(send_m, MAX_BUF, "%cHELLO!", message_t);
 	printf("Sending HELLO message...\n");
 	pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
 	if(pos < 0){
@@ -65,15 +70,20 @@ int main(){
 		}
 
 		recv_m[pos]='\0';
-		snprintf("%s", MAX_BUF, recv_m+1);
-		printf("Received message: \"%s\"\n", recv_m);
-		snprintf(send_m, MAX_BUF, "mRe:%s", recv_m);
+		message_t = recv_m[0];
+		snprintf(recv_m, MAX_BUF, "%s", recv_m+1);
 
-		printf("Sending message: \"%s\"\n", send_m);
-		pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
-		if(pos < 0){
-			fprintf(stderr, "ERROR: %s (%s,%d)\n", strerror(errno), __FILE__, __LINE__-2);
-			exit(EXIT_FAILURE);
+		if(message_t == NORMAL_MESSAGE){
+			printf("Received message: \"%s\"\n", recv_m);
+			message_t = NORMAL_MESSAGE;
+			snprintf(send_m, MAX_BUF, "%cRe:%s", message_t, recv_m);
+
+			printf("Sending message: \"%s\"\n", send_m);
+			pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
+			if(pos < 0){
+				fprintf(stderr, "ERROR: %s (%s,%d)\n", strerror(errno), __FILE__, __LINE__-2);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 

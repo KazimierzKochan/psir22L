@@ -13,9 +13,14 @@ Warsaw Univeristy of Technology
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #define MAX_BUF 128
 #define SERVER_PORT "19398"
+#define MAX_CLIENTS 100
+#define MAX_LINE 1024
+
+int genRndStrWithTimestamp(char *where, int len);
 
 int main(){
 	struct addrinfo h, *r, c;
@@ -23,16 +28,38 @@ int main(){
 	unsigned char message[MAX_BUF];
 	unsigned char t[MAX_BUF];
 	unsigned char mip_str[INET_ADDRSTRLEN];
+	int clients[MAX_CLIENTS];
+
+	srand(time(NULL));
 
 	memset(&h, 0, sizeof(struct addrinfo));
 	h.ai_family=PF_INET;
 	h.ai_socktype=SOCK_DGRAM;
 	h.ai_flags=AI_PASSIVE;
 
+	memset(&clients, 0, MAX_CLIENTS*sizeof(int));
+
 	getaddrinfo(NULL, SERVER_PORT, &h, &r);
 
 	printf("PSIR 22L Lab1, exercise 2: Simple UDP server\n");
 
+
+	printf("Random string generator test [HMSrand, 18 chars]\n");
+	int i, res;
+	char test[MAX_LINE];
+	memset(&test, 0, MAX_LINE*sizeof(test[0]));
+	for(i = 0; i < 5; i++){
+
+		res = genRndStrWithTimestamp(test, 18);
+		if(res == 0){
+			printf("Test %d: \"%s\"\n", i+1, test);
+		}
+		sleep(rand() % 5);
+	}
+
+
+// Work in progress
+/*
 	//create a socket
 	s=socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 	if(s==-1){
@@ -82,6 +109,31 @@ int main(){
 	//clean up
 	close(s);
 	freeaddrinfo(r);
+*/
+	return 0;
+}
+
+int genRndStrWithTimestamp(char *where, int len){
+	time_t rawtime;
+	struct tm *timeinfo;
+	int hours, minutes, seconds, day, month, year;
+	int i;
+	char *lookUp = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	int range = strlen(lookUp);
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(where, MAX_LINE, "%02H%02M%02S", timeinfo);
+	//%Y, %m, %d, format 02
+
+	if(len < strlen(where)){
+		return 1;
+	}
+
+	for(i = strlen(where); len > i; i++){
+		where[i] = lookUp[(rand() % range)];
+	}
 
 	return 0;
 }
