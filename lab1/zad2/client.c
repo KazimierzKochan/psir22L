@@ -16,7 +16,8 @@ Warsaw Univeristy of Technology
 #include <time.h>
 
 #define MAX_BUF 128
-#define SERVER "192.168.56.110"
+//#define SERVER "192.168.56.110"
+#define SERVER "localhost"
 #define SERVER_PORT "19398"
 #define HELLO_MESSAGE 'h'
 #define NORMAL_MESSAGE 'm'
@@ -63,6 +64,7 @@ int main(){
 	//wait for server messages, reply
 	printf("Waiting for server messages...\n");
 	for(;;){
+		/*
 		pos = recvfrom(s, recv_m, MAX_BUF, 0, (struct sockaddr*)&c, &c_len);
 		if(pos < 0){
 			fprintf(stderr, "ERROR: %s (%s,%d)\n", strerror(errno), __FILE__, __LINE__-2);
@@ -85,6 +87,16 @@ int main(){
 				exit(EXIT_FAILURE);
 			}
 		}
+		*/
+		printf("Sending message: \"%s\"\n", send_m);
+
+		snprintf(send_m, MAX_BUF, "%c%s", 'm', "testTESTtest");
+		pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
+		if(pos < 0){
+			fprintf(stderr, "ERROR: %s (%s,%d)\n", strerror(errno), __FILE__, __LINE__-2);
+			exit(EXIT_FAILURE);
+		}
+		sleep(2);
 	}
 
 	//clean up
