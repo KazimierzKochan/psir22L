@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 			uptime = 0;
 		}
 	}else{
-		printf("Syntax: ./%s [uptime (0=infinity)]\n", argv[0]);
+		printf("Syntax: %s [uptime (0=infinity)]\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
