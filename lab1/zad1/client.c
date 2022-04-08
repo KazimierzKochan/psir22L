@@ -89,7 +89,7 @@ int main(int argc, char *argv[]){
 
 		//send packet
 		printf("Sending current time: %s", string_time);
-		if(send(s, string_time, strlen(string_time), 0) < 0){
+		if(send(s, string_time, strlen(string_time), MSG_NOSIGNAL) < 0){
 			fprintf(stderr, "ERROR while trying to send packet (%s:%d)\n", __FILE__, __LINE__-1);
 			exit(EXIT_FAILURE);
 		}

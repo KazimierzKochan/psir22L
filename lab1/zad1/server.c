@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 			uptime = 0;
 		}
 	}else{
-		printf("Syntax: %s [uptime (0=infinity)]\n", argv[0]);
+		printf("Syntax: ./%s [uptime (0=infinity)]\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -56,6 +56,13 @@ int main(int argc, char *argv[]){
 	h.ai_family=PF_INET;
 	h.ai_socktype=SOCK_STREAM;
 	h.ai_flags=AI_PASSIVE;
+
+	//select
+	fd_set readfds;
+	struct timeval tv;
+	int res_select;
+	tv.tv_sec=0;
+	tv.tv_usec=5000;
 
 	getaddrinfo(NULL, SERVER_PORT, &h, &r);
 
@@ -97,24 +104,36 @@ int main(int argc, char *argv[]){
 
 	//main loop
 	while(!done){
-		//receive data from client
-		int result=recv(new_s, message, MAX_BUF, 0);
-		if(result==0){
-			printf("Client has disconneted\n");
-			break;
-			exit(EXIT_FAILURE);
-		}else if(result<0){
-			fprintf(stderr, "ERROR: %s\n", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		//end message with a null char
-		message[result]='\0';
-		printf("Client sent data: %s", message);
+		//select so that recv doesnt block program
+		FD_ZERO(&readfds);
+		FD_SET(new_s, &readfds);
 
-		//check if server should end its job
-		time_elapsed = difftime(time(NULL), start_time);
-		if(time_elapsed >= uptime && uptime != 0){
-			done = true;
+		res_select = select(new_s+1, &readfds, NULL, NULL, &tv);
+		if(res_select < 0){
+			fprintf(stderr, "ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__-2);
+			exit(EXIT_FAILURE);
+		}else if(res_select > 0){
+			if(FD_ISSET(new_s, &readfds)){
+				//receive data from client
+				int result=recv(new_s, message, MAX_BUF, 0);
+				if(result==0){
+					printf("Client has disconneted\n");
+					break;
+				}else if(result<0){
+					fprintf(stderr, "ERROR: %s\n", strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+				//end message with a null char
+				message[result]='\0';
+				printf("Client sent data: %s", message);
+			}
+		}else{
+			//background
+			//check if server should end its job
+			time_elapsed = difftime(time(NULL), start_time);
+			if(time_elapsed >= uptime && uptime != 0){
+				done = true;
+			}
 		}
 	}
 
