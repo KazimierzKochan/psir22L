@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
 
 	//send hello message
 	message_t = HELLO_MESSAGE;
-	snprintf(send_m, MAX_BUF, "%cHELLO!", message_t);
+	snprintf(send_m, MAX_BUF, "%cHello!", message_t);
 	printf("Sending HELLO message\n");
 	pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
 	if(pos < 0){
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]){
 
 	printf("Quitting...\n");
 	printf("Sending GOODBYE message\n");
-	snprintf(send_m, MAX_BUF, "%cGOODBYE!", GOODBYE_MESSAGE);
+	snprintf(send_m, MAX_BUF, "%cGoodbye!", GOODBYE_MESSAGE);
 
 	pos = sendto(s, send_m, strlen(send_m), 0, r->ai_addr, r->ai_addrlen);
 	if(pos < 0){
