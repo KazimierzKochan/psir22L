@@ -14,7 +14,7 @@
 byte MAC[]={0xb8, 0x27, 0xeb, 0xfb, 0xeb, 0x80}; //MAC adres karty sieciowej
 
 //dlugosc pakietu z danymi dla/z UDP
-#define PACKET_BUFFER_LENGTH        120 // TODO zmniejszyc maksymalnie
+#define PACKET_BUFFER_LENGTH        120
 unsigned char packetBuffer[PACKET_BUFFER_LENGTH];
 
 //numer portu na jakim nasluchujemy 
@@ -27,6 +27,7 @@ ZsutEthernetUDP Udp;
 unsigned int val = 0;
 
 void setup() {
+    //Zwyczajowe przywitanie z userem (niech wie ze system sie uruchomil poprawnie)
     Serial.begin(115200);
     Serial.print(F("Zsut eth udp server init... ["));Serial.print(F(__FILE__));
     Serial.print(F(", "));Serial.print(F(__DATE__));Serial.print(F(", "));Serial.print(F(__TIME__));Serial.println(F("]")); 
@@ -34,21 +35,21 @@ void setup() {
     //inicjaja karty sieciowej
     ZsutEthernet.begin(MAC);
 
-    //potwierdzenie IP
-    Serial.print(F("IP address: "));
+    //potwierdzenie na jakim IP dzialamy
+    Serial.print(F("My IP address: "));
     for (byte thisByte = 0; thisByte < 4; thisByte++) {
         Serial.print(ZsutEthernet.localIP()[thisByte], DEC);Serial.print(F("."));
     }
     Serial.println();
 
-    ZsutPinMode(ZSUT_PIN_Z2, OUTPUT); // TODO Zmienic zasob/pin na ten z instrukcji Kaz
+    ZsutPinMode(ZSUT_PIN_Z2, INPUT); // TODO Zmienic zasob/pin na ten z instrukcji Kaz
 
     //Uruchomienie nasluchiwania na datagaramy UDP
     Udp.begin(localPort);
 }
 
 void loop() {
-    val = ZsutDigitalRead(ZSUT_PIN_Z2);
+    val = ZsutDigitalRead(ZSUT_PIN_Z2); // wartosc od 0 do 1023
     packetBuffer[0] = val;
     Serial.print(F("Value od Z2: "));
     Serial.println(val);
@@ -59,6 +60,8 @@ void loop() {
     Udp.endPacket();
 
     millis(2920); //TODO zmienic na czas z instrukcji KAZ
+    
+   
 }
 
 /*  Testy, nc to narzedzie netcat,
