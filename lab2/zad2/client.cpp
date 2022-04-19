@@ -1,5 +1,6 @@
 #include <ZsutEthernet.h>
 #include <ZsutEthernetUdp.h>
+#include <ZsutFeatures.h>
 
 #define HELLO_MESSAGE 0b10000000U
 #define RESPONSE_MESSAGE 0b00000000U
@@ -14,14 +15,11 @@
 #define READY_FOR_REQUEST 2
 
 
-void showResponse(byte *packetBuffer, size_t len);
-void sendRequest(ZsutIPAddress ip, byte packetNum);
-
 ZsutEthernetUDP Udp;
 unsigned int localPort= REMOTE_PORT;
 byte mac[] = {0xb8, 0x27, 0xeb, 0xfb, 0xeb, 0x80};
 byte packetNum = 0;
-ZsutIPAddress remoteIp = ZsutIPAddress(192,168,56,103);
+ZsutIPAddress remoteIp = ZsutIPAddress(10,17,0,107);
 unsigned long beginTime;
 
 char requestPacketBuffer[1];
@@ -43,13 +41,10 @@ void setup() {
 
 void loop() {
 
-  int packetSize = Udp.parsePacket();
-  int packetBuffer;
-
   switch (currentState){
     case AWAIT_HELLO_STATE:
       Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
-      packetSize = Udp.parsePacket()
+      packetSize = Udp.parsePacket();
       if(packetSize){
         if(incomingPacketBuffer[0] & HELLO_MESSAGE){
           packetNum = incomingPacketBuffer[0] >> 2;
@@ -60,7 +55,7 @@ void loop() {
       break;
     case AWAIT_RESPONSE_STATE:
       Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
-      packetSize = Udp.parsePacket()
+      packetSize = Udp.parsePacket();
       if(packetSize){
         Serial.println("Client has received response. time:");
         Serial.print(ZsutMillis());
@@ -76,7 +71,7 @@ void loop() {
       break;
     case READY_FOR_REQUEST:
       if(ZsutMillis() - beginTime >= WAIT_TIME){
-        
+
         requestPacketBuffer[0] = (char)REQUEST_MESSAGE;
         requestPacketBuffer[0] = requestPacketBuffer[0] & (packetNum << 2);
         Serial.println("Sending request = ");
@@ -85,7 +80,7 @@ void loop() {
         Udp.write(requestPacketBuffer);
         Udp.endPacket();
         beginTime = ZsutMillis();
-        
+
         currentState = AWAIT_RESPONSE_STATE;
       }
       break;
