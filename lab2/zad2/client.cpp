@@ -16,10 +16,11 @@
 
 
 ZsutEthernetUDP Udp;
-unsigned int localPort= REMOTE_PORT;
-byte mac[] = {0xb8, 0x27, 0xeb, 0xfb, 0xeb, 0x80};
+
+byte mac[] = {0xb8,0x27,0xeb,0xfb,0xeb,0x80};
+
 byte packetNum = 0;
-ZsutIPAddress remoteIp = ZsutIPAddress(10,17,0,107);
+ZsutIPAddress serverIp = ZsutIPAddress(192,168,0,50);
 unsigned long beginTime;
 
 char requestPacketBuffer[1];
@@ -30,12 +31,13 @@ int packetSize;
 int currentState = AWAIT_HELLO_STATE;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
+  Serial.println();
 
-  ZsutEthernet.begin(mac);
+  //ZsutEthernet.begin(mac);
 
   Serial.println(ZsutEthernet.localIP());
-  Udp.begin(localPort);
+  Udp.begin(REMOTE_PORT);
   beginTime = ZsutMillis();
 }
 
@@ -43,42 +45,61 @@ void loop() {
 
   switch (currentState){
     case AWAIT_HELLO_STATE:
-      Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
-      packetSize = Udp.parsePacket();
-      if(packetSize){
+	  if(Udp.parsePacket()){
+		Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
         if(incomingPacketBuffer[0] & HELLO_MESSAGE){
-          packetNum = incomingPacketBuffer[0] >> 2;
+	      Serial.println("Received hello message");
           currentState = READY_FOR_REQUEST;
-        }
-      }
+        } 
+	  }
 
       break;
     case AWAIT_RESPONSE_STATE:
-      Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
-      packetSize = Udp.parsePacket();
-      if(packetSize){
-        Serial.println("Client has received response. time:");
+	  
+	  //Serial.print("IP i port w obiekcie Udp ");
+	  //Serial.print(Udp.remoteIP());
+	  //Serial.print(" ");
+	  //Serial.print(Udp.remotePort());
+	  //Serial.println();
+	  
+	  Udp.read(incomingPacketBuffer, 2);
+	  
+
+      if(Udp.parsePacket()){
+
+        Serial.print("Client has received response. time: ");
         Serial.print(ZsutMillis());
+		
         packetNum = (incomingPacketBuffer[1] >> 2) & 0b00001111;
-        outputValue = incomingPacketBuffer[0];
-        outputValue = ((incomingPacketBuffer[1] & 0b00000011) << 8) | outputValue;
-        Serial.println("Packet number:");
+        outputValue = ((incomingPacketBuffer[1] & 0b00000011) << 8) | incomingPacketBuffer[0];
+        Serial.print("\nPacket number: ");
         Serial.print(packetNum);
-        Serial.println("Value:");
+        Serial.print("\nValue: ");
         Serial.print(outputValue);
+		Serial.print("\n");
         currentState = READY_FOR_REQUEST;
       }
       break;
     case READY_FOR_REQUEST:
       if(ZsutMillis() - beginTime >= WAIT_TIME){
-
+		
         requestPacketBuffer[0] = (char)REQUEST_MESSAGE;
-        requestPacketBuffer[0] = requestPacketBuffer[0] & (packetNum << 2);
-        Serial.println("Sending request = ");
+		packetNum++;
+        requestPacketBuffer[0] = requestPacketBuffer[0] | (packetNum << 2);
+		
+        Serial.print("Sending request = 0b");
         Serial.print(requestPacketBuffer[0], BIN);
-        Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-        Udp.write(requestPacketBuffer);
+		Serial.print("\nPacket number: ");
+        Serial.print(packetNum);
+		Serial.print("\n");
+		
+        //Udp.beginPacket(serverIp, REMOTE_PORT);
+		Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+		
+        Udp.write(requestPacketBuffer, 1);
         Udp.endPacket();
+		Serial.println("Wyslano?");
+		
         beginTime = ZsutMillis();
 
         currentState = AWAIT_RESPONSE_STATE;
