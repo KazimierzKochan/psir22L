@@ -8,29 +8,27 @@ const char* ssid="";
 const char* password = "";
 
 #define HELLO_MESSAGE 0b10000000U
-#define RESPONSE_MESSAGE 0b00000000U
+#define RESPONSE_MESSAGE 0b11000000U
 #define REQUEST_MESSAGE 0b01000000U
 #define REMOTE_PORT 8276
 #define MESSAGE_COUNT 0b00111100U
 
-// to the pins used:
-const int analogInPin = A0;  // Analog input pin that the potentiometer is attached to
-const int analogOutPin = 9; // Analog output pin that the LED is attached to
-
-uint16_t sensorValue = 0;        // value read from the pot
-uint16_t outputValue = 0;        // value output to the PWM (analog out)
+//Potentiometer's pin
+const int analogInPin = A0;
+//value read from the pot
+uint16_t sensorValue = 0;
+uint16_t sendValue = 0;
 
 WiFiUDP Udp;
-
 unsigned int localPort = 8276;
-byte packetNum = 0;
-
 IPAddress clientIP = IPAddress(192,168,0,51);
 
+//buffers for messages
 char incomingPacketBuffer[1];
 char responsePacketBuffer[2];
-char helloMessage[2] = {(char)HELLO_MESSAGE, (char)0};
+char helloMessage[2];
 
+byte packetNum = 1;
 
 void setup() {
   // initialize serial communications at 9600 bps:
@@ -45,10 +43,17 @@ void setup() {
       Serial.print(".");        
   }
   
-  Serial.println("Wifi Connected!");
+  Serial.println("Connected to WiFi!");
   Serial.print("IP Address : ");
   Serial.println(WiFi.localIP() );
   Udp.begin(localPort);
+
+  //prepare hello message
+  //set flag
+  helloMessage[1] = (char)HELLO_MESSAGE;
+  //set packet num
+  helloMessage[1] = (char)(helloMessage[1] | (packetNum << 2));
+  helloMessage[0] = (char)0;
 
   //send HELLO message
   Udp.beginPacket(clientIP, REMOTE_PORT);
@@ -56,52 +61,67 @@ void setup() {
   int r = Udp.write(helloMessage, 2);
   Udp.endPacket();
 
-  Serial.print("Sent hello message: ");
-  Serial.print(r);
-  Serial.println(" bytes");
+  Serial.print("+++Sent hello message to ");
+  Serial.print(clientIP);
+  Serial.println(" +++");
   packetNum++;
-  
 }
 
 void loop() {
-
   int packetSize = Udp.parsePacket();
   int packetBuffer;
   if(packetSize > 0){
     Udp.read(incomingPacketBuffer, sizeof(incomingPacketBuffer));
-    
-    if(incomingPacketBuffer[0] & REQUEST_MESSAGE){
-      Serial.println("Server has received data request");
-      byte receivedPacketNum = (incomingPacketBuffer[1] & 0b00111100) >> 2;
-      Serial.print("Packet num: ");
-      Serial.print(receivedPacketNum);
-      Serial.print("\n");
 
+    //if request
+    if(incomingPacketBuffer[0] & REQUEST_MESSAGE){
+      Serial.println("===Server has received data request");
+      byte receivedPacketNum = (incomingPacketBuffer[0] & 0b00111100) >> 2;
+      
+      if(receivedPacketNum == packetNum){
+        Serial.print("Packet num: ");
+        Serial.print(packetNum);
+        Serial.print("\n");
+        if(packetNum == 15){
+          Serial.println("Max packet num (15), starting from 1");
+          packetNum = 1;
+        }else{
+          packetNum++;
+        }
+      }else{
+        Serial.println("Received and local packet numbers don't match");
+      }
+      Serial.println("===");
       sensorValue = analogRead(analogInPin);
-      outputValue = map(sensorValue, 0, 1023, 0, 255);
+      sendValue = map(sensorValue, 0, 1023, 0, 1023);
+      sendValue = constrain(sendValue, 0, 1023);
   
       Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
       
       //set output val
-      responsePacketBuffer[0] = (char)outputValue;
-      responsePacketBuffer[1] = (char)(outputValue >> 8);
+      responsePacketBuffer[0] = (char)sendValue;
+      responsePacketBuffer[1] = (char)(sendValue >> 8);
       //set flag
       responsePacketBuffer[1] = (char)(responsePacketBuffer[1] | (responsePacketBuffer[1] & RESPONSE_MESSAGE));
       //set packet num
-      receivedPacketNum++;
-      responsePacketBuffer[1] = (char)(responsePacketBuffer[1] | (receivedPacketNum << 2));
-      
+      responsePacketBuffer[1] = (char)(responsePacketBuffer[1] | (packetNum << 2));
+      Serial.print("---Sending response\n");
       Serial.print("Read value: ");
-      Serial.print(outputValue);
-      Serial.print(F("\nOur dgram: 0b"));
-      Serial.print(responsePacketBuffer[0], BIN);
-      Serial.print(" 0b");
-      Serial.print(responsePacketBuffer[1], BIN);
-      Serial.print(F("\n"));
+      Serial.print(sendValue);
+      Serial.print("\n");
+      Serial.print("Packet number: ");
+      Serial.print(packetNum);
+      if(packetNum == 15){
+        Serial.println("Max packet num (15), starting from 1");
+        packetNum = 1;
+      }else{
+        packetNum++;
+      }
       
       Udp.write(responsePacketBuffer, 2);
       Udp.endPacket();
       
+      Serial.print("\n---\n");
     }
   }
 }
